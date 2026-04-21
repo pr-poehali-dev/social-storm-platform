@@ -1,7 +1,8 @@
 import Icon from "@/components/ui/icon";
+import { type AppUser } from "@/store";
 
 interface HomePageProps {
-  user: { name: string; role: string; email: string };
+  user: AppUser;
   onNavigate: (page: string) => void;
 }
 

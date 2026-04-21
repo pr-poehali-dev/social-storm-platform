@@ -1,44 +1,15 @@
-import { useState, useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import Icon from "@/components/ui/icon";
+import { useState } from "react";
+import { ROLE_COLORS, ROLE_LABELS, type ChatMessage, type AppUser } from "@/store";
 
 interface ChatPageProps {
-  user: { name: string; role: string; email: string };
+  user: AppUser;
+  messages: ChatMessage[];
+  setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
 }
 
-interface Message {
-  id: number;
-  author: string;
-  role: string;
-  text: string;
-  time: string;
-  mine: boolean;
-}
-
-const INITIAL_MESSAGES: Message[] = [
-  { id: 1, author: "Главный Администратор", role: "superadmin", text: "Добро пожаловать в общий чат платформы «Социальная Гроза»! 🌩️", time: "09:00", mine: false },
-  { id: 2, author: "Учитель Иванов", role: "admin", text: "Всем привет! Напоминаю, что завтра контрольная по математике.", time: "09:15", mine: false },
-  { id: 3, author: "Ученик Петров", role: "student", text: "Понял, спасибо за напоминание!", time: "09:18", mine: false },
-  { id: 4, author: "Главный Администратор", role: "superadmin", text: "Сегодня будет добавлено 5 новых видеоуроков по физике.", time: "10:00", mine: false },
-];
-
-const ROLE_COLORS: Record<string, string> = {
-  superadmin: "#ff6b1a",
-  admin: "#3b82f6",
-  student: "#22c55e",
-  moderator: "#a855f7",
-  donor: "#f59e0b",
-};
-
-const ROLE_LABELS: Record<string, string> = {
-  superadmin: "Суперадмин",
-  admin: "Администратор",
-  student: "Ученик",
-  moderator: "Модератор",
-  donor: "Донатер",
-};
-
-export default function ChatPage({ user }: ChatPageProps) {
-  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
+export default function ChatPage({ user, messages, setMessages }: ChatPageProps) {
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -54,9 +25,10 @@ export default function ChatPage({ user }: ChatPageProps) {
       id: Date.now(),
       author: user.name,
       role: user.role,
+      email: user.email,
       text: input.trim(),
       time,
-      mine: true,
+      isDonor: user.isDonor,
     }]);
     setInput("");
   };
@@ -68,69 +40,90 @@ export default function ChatPage({ user }: ChatPageProps) {
     }
   };
 
+  const isMe = (msg: ChatMessage) => msg.email === user.email;
+
   return (
-    <div className="flex flex-col h-screen animate-fade-in" style={{ background: '#0d0b09' }}>
-      <div className="flex-shrink-0 px-6 py-4 flex items-center gap-4 nav-glow" style={{ background: '#111009', borderBottom: '1px solid rgba(255,107,26,0.15)' }}>
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,107,26,0.15)' }}>
-          <Icon name="MessageSquare" size={20} className="text-orange-400" />
+    <div className="flex flex-col" style={{ height: 'calc(100vh - 57px)', background: '#0a0806' }}>
+      {/* Header */}
+      <div className="flex-shrink-0 px-5 py-3.5 flex items-center gap-3" style={{ background: '#0d0b08', borderBottom: '1px solid rgba(255,107,26,0.08)' }}>
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,107,26,0.1)' }}>
+          <Icon name="MessageSquare" size={17} style={{ color: '#ff6b1a' }} />
         </div>
-        <div>
-          <h1 className="font-display text-xl font-bold text-white">Общий чат</h1>
-          <p className="text-xs text-muted-foreground font-body">Онлайн: {messages.length > 0 ? 4 : 0} участников</p>
+        <div className="flex-1">
+          <h1 className="font-display text-base font-bold text-white">Общий чат</h1>
+          <p className="text-xs font-body" style={{ color: '#5a4a3a' }}>{messages.length} сообщений · все участники видят переписку</p>
         </div>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#22c55e' }} />
-          <span className="text-xs text-muted-foreground font-body">Live</span>
+          <span className="text-xs font-body" style={{ color: '#5a4a3a' }}>Live</span>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-hidden">
-        {messages.map((msg, i) => (
-          <div key={msg.id} className={`flex gap-3 animate-fade-in ${msg.mine ? "flex-row-reverse" : ""}`} style={{ animationDelay: `${i * 0.03}s` }}>
-            <div className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-sm font-display font-bold" style={{ background: `${ROLE_COLORS[msg.role]}22`, border: `1px solid ${ROLE_COLORS[msg.role]}44`, color: ROLE_COLORS[msg.role] }}>
-              {msg.author[0]}
-            </div>
-            <div className={`max-w-[70%] ${msg.mine ? "items-end" : "items-start"} flex flex-col gap-1`}>
-              <div className={`flex items-center gap-2 ${msg.mine ? "flex-row-reverse" : ""}`}>
-                <span className="text-xs font-semibold font-body" style={{ color: ROLE_COLORS[msg.role] }}>{msg.author}</span>
-                <span className="text-xs px-1.5 py-0.5 rounded font-body" style={{ background: `${ROLE_COLORS[msg.role]}15`, color: ROLE_COLORS[msg.role], fontSize: '10px' }}>
-                  {ROLE_LABELS[msg.role] || msg.role}
-                </span>
-                <span className="text-xs text-muted-foreground font-body">{msg.time}</span>
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 scrollbar-hidden">
+        {messages.map((msg, i) => {
+          const mine = isMe(msg);
+          const color = ROLE_COLORS[msg.role] ?? "#ff6b1a";
+          return (
+            <div key={msg.id} className={`flex gap-3 animate-fade-in ${mine ? "flex-row-reverse" : ""}`} style={{ animationDelay: `${Math.min(i, 10) * 0.02}s` }}>
+              {/* Avatar */}
+              <div className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center font-display text-sm font-bold relative"
+                style={{ background: `${color}18`, border: `1px solid ${color}30`, color }}>
+                {msg.author[0]}
+                {msg.isDonor && (
+                  <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded flex items-center justify-center text-xs leading-none" style={{ background: '#f59e0b', fontSize: '8px' }}>💎</div>
+                )}
               </div>
-              <div className="px-4 py-2.5 rounded-2xl text-sm font-body" style={msg.mine
-                ? { background: 'linear-gradient(135deg, #ff6b1a, #cc4400)', color: '#fff', borderBottomRightRadius: '4px' }
-                : { background: 'rgba(255,107,26,0.07)', border: '1px solid rgba(255,107,26,0.12)', color: '#e5d5c5', borderBottomLeftRadius: '4px' }
-              }>
-                {msg.text}
+
+              <div className={`flex flex-col gap-1 max-w-[72%] ${mine ? "items-end" : "items-start"}`}>
+                {/* Meta */}
+                <div className={`flex items-center gap-1.5 ${mine ? "flex-row-reverse" : ""}`}>
+                  <span className="text-xs font-semibold font-body" style={{ color }}>{mine ? "Вы" : msg.author.split(" ")[0]}</span>
+                  <span className="text-xs font-body px-1.5 py-0.5 rounded-md" style={{ background: `${color}12`, color: `${color}cc`, fontSize: '10px' }}>
+                    {ROLE_LABELS[msg.role] ?? msg.role}
+                  </span>
+                  {msg.isDonor && <span className="text-xs">💎</span>}
+                  <span className="text-xs font-body" style={{ color: '#3a3028', fontSize: '10px' }}>{msg.time}</span>
+                </div>
+
+                {/* Bubble */}
+                <div className="px-4 py-2.5 text-sm font-body leading-relaxed"
+                  style={mine
+                    ? { background: 'linear-gradient(135deg, #ff6b1a, #cc3d00)', color: '#fff', borderRadius: '18px 18px 4px 18px', boxShadow: '0 4px 16px rgba(255,107,26,0.25)' }
+                    : { background: 'rgba(255,107,26,0.06)', border: '1px solid rgba(255,107,26,0.1)', color: '#d4c4b0', borderRadius: '18px 18px 18px 4px' }
+                  }>
+                  {msg.text}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         <div ref={bottomRef} />
       </div>
 
-      <div className="flex-shrink-0 p-4" style={{ borderTop: '1px solid rgba(255,107,26,0.1)', background: '#0f0d0b' }}>
+      {/* Input */}
+      <div className="flex-shrink-0 px-4 pb-4 pt-3" style={{ borderTop: '1px solid rgba(255,107,26,0.08)', background: '#0d0b08' }}>
         <div className="flex gap-3 max-w-4xl mx-auto">
-          <div className="flex-1 flex items-center gap-3 rounded-2xl px-4" style={{ background: 'rgba(255,107,26,0.07)', border: '1px solid rgba(255,107,26,0.15)' }}>
+          <div className="flex-1 flex items-center gap-3 rounded-2xl px-4" style={{ background: 'rgba(255,107,26,0.06)', border: '1px solid rgba(255,107,26,0.12)' }}>
             <textarea
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKey}
-              placeholder="Написать сообщение..."
+              placeholder="Написать сообщение... (Enter — отправить)"
               rows={1}
-              className="flex-1 bg-transparent py-3 text-sm font-body text-white outline-none resize-none scrollbar-hidden placeholder:text-muted-foreground"
-              style={{ maxHeight: '120px' }}
+              className="flex-1 bg-transparent py-3.5 text-sm font-body text-white outline-none resize-none scrollbar-hidden"
+              style={{ maxHeight: '100px', color: '#d4c4b0' }}
             />
-            <Icon name="Smile" size={18} className="text-muted-foreground flex-shrink-0 cursor-pointer hover:text-orange-400 transition-colors" />
           </div>
-          <button
-            onClick={sendMessage}
-            disabled={!input.trim()}
-            className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95"
-            style={{ background: input.trim() ? 'linear-gradient(135deg, #ff6b1a, #cc4400)' : 'rgba(255,107,26,0.1)', cursor: input.trim() ? 'pointer' : 'default' }}
+          <button onClick={sendMessage} disabled={!input.trim()}
+            className="w-11 h-11 self-end rounded-2xl flex items-center justify-center flex-shrink-0 transition-all"
+            style={{
+              background: input.trim() ? 'linear-gradient(135deg, #ff6b1a, #cc3d00)' : 'rgba(255,107,26,0.08)',
+              boxShadow: input.trim() ? '0 4px 16px rgba(255,107,26,0.3)' : 'none',
+              transform: input.trim() ? 'scale(1)' : 'scale(0.95)',
+            }}
           >
-            <Icon name="Send" size={18} className="text-white" />
+            <Icon name="Send" size={16} className="text-white" />
           </button>
         </div>
       </div>

@@ -1,5 +1,3 @@
-import { useState, useCallback } from "react";
-
 export interface VideoItem {
   id: number;
   title: string;
@@ -25,6 +23,23 @@ export interface TaskItem {
   priority: "high" | "medium" | "low";
 }
 
+export interface ChatMessage {
+  id: number;
+  author: string;
+  role: string;
+  email: string;
+  text: string;
+  time: string;
+  isDonor: boolean;
+}
+
+export interface AppUser {
+  name: string;
+  role: string;
+  email: string;
+  isDonor: boolean;
+}
+
 export const DEFAULT_SUBJECTS: SubjectItem[] = [
   { id: 1, name: "Математика", icon: "📐" },
   { id: 2, name: "Русский язык", icon: "✏️" },
@@ -35,45 +50,48 @@ export const DEFAULT_SUBJECTS: SubjectItem[] = [
   { id: 7, name: "Английский", icon: "🌍" },
 ];
 
-export const DEFAULT_VIDEOS: VideoItem[] = [
+export const DEFAULT_VIDEOS: VideoItem[] = [];
+
+export const DEFAULT_TASKS: TaskItem[] = [];
+
+export const DEFAULT_MESSAGES: ChatMessage[] = [
   {
     id: 1,
-    title: "Квадратные уравнения — полный разбор",
-    subject: "Математика",
-    author: "Учитель Иванов",
-    url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    views: 1247,
-    date: "20 апр",
-    thumb: "📐",
+    author: "Главный Администратор",
+    role: "superadmin",
+    email: "admin@groza.ru",
+    text: "Добро пожаловать в «Социальную Грозу»! ⚡ Здесь вы можете общаться, учиться и развиваться.",
+    time: "09:00",
+    isDonor: false,
   },
   {
     id: 2,
-    title: "Законы Ньютона в задачах",
-    subject: "Физика",
-    author: "Проф. Смирнов",
-    url: "https://www.youtube.com/watch?v=9bZkp7q19f0",
-    views: 893,
-    date: "19 апр",
-    thumb: "⚗️",
-  },
-  {
-    id: 3,
-    title: "Великая Отечественная война",
-    subject: "История",
-    author: "Учитель Козлов",
-    url: "https://www.youtube.com/watch?v=OPf0YbXqDm0",
-    views: 2341,
-    date: "18 апр",
-    thumb: "📚",
+    author: "Учитель Иванов",
+    role: "admin",
+    email: "teacher@groza.ru",
+    text: "Привет всем! Сегодня загружаю новые видеоуроки по математике. Проверяйте раздел «Видео»!",
+    time: "09:30",
+    isDonor: false,
   },
 ];
 
-export const DEFAULT_TASKS: TaskItem[] = [
-  { id: 1, subject: "Математика", task: "Параграф 15, задачи 1-10", due: "23 апр", priority: "high" },
-  { id: 2, subject: "Русский язык", task: "Сочинение на тему «Весна»", due: "24 апр", priority: "medium" },
-  { id: 3, subject: "Физика", task: "Лабораторная работа №3", due: "25 апр", priority: "high" },
-  { id: 4, subject: "История", task: "Конспект главы 8", due: "26 апр", priority: "low" },
-];
+export const ROLE_COLORS: Record<string, string> = {
+  superadmin: "#ff6b1a",
+  admin: "#3b82f6",
+  student: "#22c55e",
+  moderator: "#a855f7",
+  donor: "#f59e0b",
+  vip: "#06b6d4",
+};
+
+export const ROLE_LABELS: Record<string, string> = {
+  superadmin: "Суперадмин",
+  admin: "Администратор",
+  student: "Ученик",
+  moderator: "Модератор",
+  donor: "Донатер",
+  vip: "VIP",
+};
 
 function getYouTubeId(url: string): string | null {
   const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\s?#]+)/);
@@ -82,7 +100,7 @@ function getYouTubeId(url: string): string | null {
 
 export function getEmbedUrl(url: string): string | null {
   const ytId = getYouTubeId(url);
-  if (ytId) return `https://www.youtube.com/embed/${ytId}?autoplay=1`;
+  if (ytId) return `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0`;
   if (url.includes("rutube.ru/video/")) {
     const match = url.match(/rutube\.ru\/video\/([a-zA-Z0-9]+)/);
     if (match) return `https://rutube.ru/play/embed/${match[1]}`;
