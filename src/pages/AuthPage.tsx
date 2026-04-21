@@ -18,11 +18,15 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [showPass, setShowPass] = useState(false);
+  const [adminModal, setAdminModal] = useState(false);
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [adminError, setAdminError] = useState("");
+  const [adminShowPass, setAdminShowPass] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-
     if (isLogin) {
       const user = DEMO_USERS.find(u => u.email === email && u.password === password);
       if (user) {
@@ -38,6 +42,19 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
     }
   };
 
+  const handleAdminLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setAdminError("");
+    const user = DEMO_USERS.find(u =>
+      u.email === adminEmail && u.password === adminPassword && (u.role === "admin" || u.role === "superadmin")
+    );
+    if (user) {
+      onLogin({ name: user.name, role: user.role, email: user.email });
+    } else {
+      setAdminError("Неверные данные или недостаточно прав");
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden" style={{ background: '#0d0b09' }}>
       <div className="absolute inset-0 pointer-events-none">
@@ -45,6 +62,73 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full opacity-15" style={{ background: 'radial-gradient(circle, #cc4400 0%, transparent 70%)' }} />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full opacity-5" style={{ background: 'radial-gradient(circle, #ff9545 0%, transparent 70%)' }} />
       </div>
+
+      {adminModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}>
+          <div className="w-full max-w-sm animate-scale-in rounded-2xl p-7" style={{ background: '#131110', border: '1px solid rgba(255,107,26,0.25)' }}>
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #ff6b1a, #cc4400)' }}>
+                  <Icon name="Shield" size={16} className="text-white" />
+                </div>
+                <span className="font-display text-lg font-bold text-white">Вход для администраторов</span>
+              </div>
+              <button onClick={() => { setAdminModal(false); setAdminError(""); }} className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-white transition-colors" style={{ background: 'rgba(255,107,26,0.08)' }}>
+                <Icon name="X" size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleAdminLogin} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block font-body uppercase tracking-wider">Email администратора</label>
+                <input
+                  type="email"
+                  value={adminEmail}
+                  onChange={e => setAdminEmail(e.target.value)}
+                  placeholder="admin@example.com"
+                  className="w-full px-4 py-3 rounded-xl text-sm font-body outline-none transition-all"
+                  style={{ background: 'rgba(255,107,26,0.08)', border: '1px solid rgba(255,107,26,0.2)', color: '#fff' }}
+                  onFocus={e => e.target.style.borderColor = '#ff6b1a'}
+                  onBlur={e => e.target.style.borderColor = 'rgba(255,107,26,0.2)'}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block font-body uppercase tracking-wider">Пароль</label>
+                <div className="relative">
+                  <input
+                    type={adminShowPass ? "text" : "password"}
+                    value={adminPassword}
+                    onChange={e => setAdminPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full px-4 py-3 rounded-xl text-sm font-body outline-none transition-all pr-11"
+                    style={{ background: 'rgba(255,107,26,0.08)', border: '1px solid rgba(255,107,26,0.2)', color: '#fff' }}
+                    onFocus={e => e.target.style.borderColor = '#ff6b1a'}
+                    onBlur={e => e.target.style.borderColor = 'rgba(255,107,26,0.2)'}
+                  />
+                  <button type="button" onClick={() => setAdminShowPass(!adminShowPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-orange-400 transition-colors">
+                    <Icon name={adminShowPass ? "EyeOff" : "Eye"} size={16} />
+                  </button>
+                </div>
+              </div>
+
+              {adminError && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm" style={{ background: 'rgba(255,50,50,0.1)', border: '1px solid rgba(255,50,50,0.3)', color: '#ff6b6b' }}>
+                  <Icon name="AlertCircle" size={14} />
+                  {adminError}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="w-full py-3 rounded-xl font-display font-semibold text-white text-base tracking-wide transition-all hover:scale-[1.02] active:scale-[0.98] orange-glow"
+                style={{ background: 'linear-gradient(135deg, #ff6b1a 0%, #ff9545 50%, #cc4400 100%)' }}
+              >
+                ВОЙТИ В ПАНЕЛЬ
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       <div className="w-full max-w-md px-4 animate-fade-in relative z-10">
         <div className="text-center mb-8">
@@ -139,13 +223,16 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
             </button>
           </form>
 
-          {isLogin && (
-            <div className="mt-4 p-3 rounded-xl" style={{ background: 'rgba(255,107,26,0.06)', border: '1px solid rgba(255,107,26,0.1)' }}>
-              <p className="text-xs text-muted-foreground font-body mb-1">Демо-доступ:</p>
-              <p className="text-xs font-body" style={{ color: '#ff9545' }}>admin@groza.ru / admin123</p>
-              <p className="text-xs font-body" style={{ color: '#ff9545' }}>student@groza.ru / student123</p>
-            </div>
-          )}
+          <div className="mt-4 pt-4" style={{ borderTop: '1px solid rgba(255,107,26,0.1)' }}>
+            <button
+              onClick={() => { setAdminModal(true); setAdminError(""); setAdminEmail(""); setAdminPassword(""); }}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold font-body transition-all hover:scale-[1.01] active:scale-[0.99]"
+              style={{ background: 'rgba(255,107,26,0.08)', border: '1px solid rgba(255,107,26,0.2)', color: '#ff9545' }}
+            >
+              <Icon name="Shield" size={16} />
+              Войти как администратор
+            </button>
+          </div>
         </div>
       </div>
     </div>

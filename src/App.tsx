@@ -7,6 +7,7 @@ import ChatPage from "@/pages/ChatPage";
 import ProfilePage from "@/pages/ProfilePage";
 import VideosPage from "@/pages/VideosPage";
 import AdminPage from "@/pages/AdminPage";
+import { DEFAULT_VIDEOS, DEFAULT_SUBJECTS, DEFAULT_TASKS, type VideoItem, type SubjectItem, type TaskItem } from "@/store";
 
 type Page = "home" | "diary" | "chat" | "profile" | "videos" | "admin";
 
@@ -27,6 +28,10 @@ const NAV_ITEMS = [
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [page, setPage] = useState<Page>("home");
+
+  const [videos, setVideos] = useState<VideoItem[]>(DEFAULT_VIDEOS);
+  const [subjects, setSubjects] = useState<SubjectItem[]>(DEFAULT_SUBJECTS);
+  const [tasks, setTasks] = useState<TaskItem[]>(DEFAULT_TASKS);
 
   const handleLogin = (u: User) => setUser(u);
   const handleLogout = () => { setUser(null); setPage("home"); };
@@ -105,11 +110,21 @@ export default function App() {
 
         <main className="flex-1 overflow-y-auto">
           {page === "home" && <HomePage user={user} onNavigate={navigate} />}
-          {page === "diary" && <DiaryPage />}
+          {page === "diary" && <DiaryPage tasks={tasks} subjects={subjects} />}
           {page === "chat" && <ChatPage user={user} />}
           {page === "profile" && <ProfilePage user={user} />}
-          {page === "videos" && <VideosPage user={user} />}
-          {page === "admin" && isAdmin && <AdminPage user={user} />}
+          {page === "videos" && <VideosPage user={user} videos={videos} setVideos={setVideos} subjects={subjects} />}
+          {page === "admin" && isAdmin && (
+            <AdminPage
+              user={user}
+              videos={videos}
+              setVideos={setVideos}
+              subjects={subjects}
+              setSubjects={setSubjects}
+              tasks={tasks}
+              setTasks={setTasks}
+            />
+          )}
           {page === "admin" && !isAdmin && (
             <div className="flex items-center justify-center h-full min-h-[60vh]">
               <div className="text-center">
